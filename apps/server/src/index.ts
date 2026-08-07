@@ -1,9 +1,11 @@
 import dotenv from 'dotenv'
 dotenv.config()
-// dotenv.config() must run before anything else reads process.env
 
 import express from 'express'
 import cors from 'cors'
+import { db } from './db'
+// Just importing it is enough to verify the connection config is correct
+// We'll use db in routes starting Phase 3
 
 const app = express()
 const PORT = process.env.PORT ?? 4000
@@ -13,14 +15,16 @@ app.use(cors({
   credentials: true,
 }))
 app.use(express.json())
-// express.json() parses incoming JSON request bodies into req.body
-// without this req.body is undefined
 
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+app.get('/health', async (_req, res) => {
+  try {
+    // Quick query to verify DB connection is alive
+    await db.execute('select 1')
+    res.json({ status: 'ok', db: 'connected', timestamp: new Date().toISOString() })
+  } catch {
+    res.status(500).json({ status: 'error', db: 'disconnected' })
+  }
 })
-// _req — the underscore prefix means "I know this parameter exists but I'm not using it"
-// TypeScript's noUnusedParameters would error without it
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`)

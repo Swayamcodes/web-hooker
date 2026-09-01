@@ -2,6 +2,8 @@ import { Router } from 'express'
 import { db } from '../db'
 import { endpoints, requests } from '../db/schema'
 import { eq, desc } from 'drizzle-orm'
+import { randomBytes } from 'node:crypto'
+
 
 const router = Router()
 // Router() creates a mini Express app for grouping related routes
@@ -16,7 +18,7 @@ function generateId(length = 8): string {
   // randomBytes generates cryptographically random bytes
   // toString('hex') converts to a hex string
   // slice(0, length) takes only what we need
-  return require('crypto').randomBytes(length).toString('hex').slice(0, length)
+  return randomBytes(length).toString('hex').slice(0, length)
 }
 
 // ── POST /endpoints ─────────────────────────────────────────────

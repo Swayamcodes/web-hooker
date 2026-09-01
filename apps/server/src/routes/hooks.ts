@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { db } from '../db'
 import { endpoints, requests } from '../db/schema'
 import { eq, sql } from 'drizzle-orm'
-import { io } from '../index'
+import { getIO } from '../lib/socket'
 // We import io here so we can emit to the room when a request arrives
 
 const router = Router()
@@ -37,7 +37,7 @@ router.all('/:endpointId', async (req, res) => {
     // req.body is parsed by express.json() — undefined if no body or wrong Content-Type
     // We store null for bodyless requests (GET, HEAD)
 
-    const query = req.query as Record<string, string>
+    const query = { ...req.query } as Record<string, string>
     // req.query contains parsed query string params
     // ?foo=bar becomes { foo: 'bar' }
 
@@ -53,6 +53,17 @@ router.all('/:endpointId', async (req, res) => {
 
     // 3. Save request to database
     const id = require('crypto').randomUUID() as string
+
+    console.log('Webhook values:', {
+  id,
+  endpointId,
+  method,
+  headers,
+  body,
+  query,
+  ip,
+  size,
+})
 
     const [savedRequest] = await db
       .insert(requests)
@@ -80,7 +91,10 @@ router.all('/:endpointId', async (req, res) => {
       .where(eq(endpoints.id, endpointId))
 
     // 5. Broadcast to all clients watching this endpoint
-    io.to(endpointId).emit('new_request', savedRequest)
+    
+    getIO().to(endpointId).emit('new_request', savedRequest)
+    // prev-io.to(endpointId).emit('new_request', savedRequest)
+
     // io.to(room).emit(event, data)
     // Only clients that called socket.join(endpointId) receive this
     // This is why rooms matter — you don't want endpoint A's requests

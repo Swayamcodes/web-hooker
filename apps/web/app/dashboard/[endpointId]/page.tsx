@@ -1,7 +1,9 @@
-export default function DashboardPage({
+export default async function DashboardPage({
   params,
 }: {
-  params: { endpointId: string }
+  params: Promise<{ endpointId: string }>
 }) {
-  return <div>Dashboard for {params.endpointId}</div>
+  const { endpointId } = await params
+
+  return <div>Dashboard for {endpointId}</div>
 }
